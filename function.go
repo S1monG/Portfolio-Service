@@ -10,7 +10,9 @@ import (
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
-// TODO Define a response structure for the API and use when encoding the response
+type response struct {
+	Counter int64 `json:"counter"`
+}
 
 func init() {
 	// Replace with your project ID
@@ -36,9 +38,8 @@ func init() {
 
 		// Send the response as JSON
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"counter": updatedCounter,
-		})
+		jsonResponse := &response{Counter: updatedCounter}
+		json.NewEncoder(w).Encode(jsonResponse)
 	})
 
 	functions.HTTP("simple-counter", func(w http.ResponseWriter, r *http.Request) {
@@ -50,9 +51,8 @@ func init() {
 
 		// Send the response as JSON
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"counter": counter,
-		})
+		jsonResponse := &response{Counter: counter}
+		json.NewEncoder(w).Encode(jsonResponse)
 	})
 
 	fmt.Println("Server listening on port 8080...")
