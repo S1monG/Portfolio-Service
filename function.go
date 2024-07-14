@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/firestore"
-	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"github.com/rs/cors"
 )
 
 type response struct {
@@ -15,7 +15,6 @@ type response struct {
 }
 
 func init() {
-	// Replace with your project ID
 	projectID := "sigma-tractor-429314-n0"
 
 	// Initialize Firestore client
@@ -28,7 +27,16 @@ func init() {
 	}
 	defer client.Close()
 
-	functions.HTTP("increment-simple-counter", func(w http.ResponseWriter, r *http.Request) {
+	// Define CORS policy
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "PUT"},
+		AllowedHeaders: []string{"*"},
+	})
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("increment-simple-counter", func(w http.ResponseWriter, r *http.Request) {
 		// Increment the counter
 		updatedCounter, err := updateFireStore(ctx, client)
 		if err != nil {
@@ -42,7 +50,7 @@ func init() {
 		json.NewEncoder(w).Encode(jsonResponse)
 	})
 
-	functions.HTTP("simple-counter", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("simple-counter", func(w http.ResponseWriter, r *http.Request) {
 		counter, err := getFireStore(ctx, client)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -55,8 +63,11 @@ func init() {
 		json.NewEncoder(w).Encode(jsonResponse)
 	})
 
+	// Wrap the mux with the CORS policy
+	handler := corsHandler.Handler(mux)
+
 	fmt.Println("Server listening on port 8080...")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", handler)
 }
 
 /*
