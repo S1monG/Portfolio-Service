@@ -27,16 +27,9 @@ func init() {
 	}
 	defer client.Close()
 
-	// Define CORS policy
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "PUT"},
-		AllowedHeaders: []string{"*"},
-	})
-
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("increment-simple-counter", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/increment-simple-counter", func(w http.ResponseWriter, r *http.Request) {
 		// Increment the counter
 		updatedCounter, err := updateFireStore(ctx, client)
 		if err != nil {
@@ -50,7 +43,7 @@ func init() {
 		json.NewEncoder(w).Encode(jsonResponse)
 	})
 
-	mux.HandleFunc("simple-counter", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/simple-counter", func(w http.ResponseWriter, r *http.Request) {
 		counter, err := getFireStore(ctx, client)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,7 +57,7 @@ func init() {
 	})
 
 	// Wrap the mux with the CORS policy
-	handler := corsHandler.Handler(mux)
+	handler := cors.Default().Handler(mux)
 
 	fmt.Println("Server listening on port 8080...")
 	http.ListenAndServe(":8080", handler)
