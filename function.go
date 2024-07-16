@@ -1,18 +1,14 @@
-package incrementcounter
+package function
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"cloud.google.com/go/firestore"
-	"github.com/rs/cors"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
-
-type response struct {
-	Counter int64 `json:"counter"`
-}
 
 func init() {
 	projectID := "sigma-tractor-429314-n0"
@@ -27,40 +23,34 @@ func init() {
 	}
 	defer client.Close()
 
-	mux := http.NewServeMux()
+	r := gin.Default()
 
-	mux.HandleFunc("/increment-simple-counter", func(w http.ResponseWriter, r *http.Request) {
+	r.POST("/increment-simple-counter", func(c *gin.Context) {
 		// Increment the counter
 		updatedCounter, err := updateFireStore(ctx, client)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		// Send the response as JSON
-		w.Header().Set("Content-Type", "application/json")
-		jsonResponse := &response{Counter: updatedCounter}
-		json.NewEncoder(w).Encode(jsonResponse)
+		c.JSON(http.StatusOK, gin.H{"counter": updatedCounter})
 	})
 
-	mux.HandleFunc("/simple-counter", func(w http.ResponseWriter, r *http.Request) {
+	r.GET("/simple-counter", func(c *gin.Context) {
 		counter, err := getFireStore(ctx, client)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		// Send the response as JSON
-		w.Header().Set("Content-Type", "application/json")
-		jsonResponse := &response{Counter: counter}
-		json.NewEncoder(w).Encode(jsonResponse)
+		c.JSON(http.StatusOK, gin.H{"counter": counter})
 	})
 
-	// Wrap the mux with the CORS policy
-	handler := cors.Default().Handler(mux)
-
+	r.Use(cors.Default())
 	fmt.Println("Server listening on port 8080...")
-	http.ListenAndServe(":8080", handler)
+	r.Run(":8080")
 }
 
 /*
