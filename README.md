@@ -7,9 +7,8 @@ Authorize to gcloud and run below script to deploy service to GCP
   --runtime=go122 \
   --trigger-http \
   --allow-unauthenticated \
-  --project sigma-tractor-429314-n0 \
-  --entry-point=function \
-  // --source=.
+  --entry-point=GetCounter \
+  --source=.
 
 
 Alternativly for more control in the future I should build the functions in a docker container image, push the image to Google Container Registery and deploy the container to Google Cloud Run
