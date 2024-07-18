@@ -1,13 +1,13 @@
-Serverless cloud functions handling requests made by my (portfolio) gh-pages website. Handlers are written in go and deployed to Google Cloud.
+WIP Serverless cloud functions handling requests made by my (portfolio) gh-pages website. Handlers are written in go and deployed to GCP.
 
 Authorize to gcloud and run below script to deploy service to GCP
 
-`gcloud functions deploy getCounter \
+`gcloud functions deploy <path> \
   --region=europe-west1
   --runtime=go122 \
   --trigger-http \
   --allow-unauthenticated \
-  --entry-point=GetCounter \
+  --entry-point=<Function Name> \
   --source=.
 
 
