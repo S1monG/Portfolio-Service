@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"cloud.google.com/go/firestore"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
@@ -23,7 +24,16 @@ func init() {
 	functions.HTTP("IncrementCounter", incrementCounter)
 }
 
+func enableCors(w *http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	// Check if the origin is https://s1mong.github.io or its subpaths
+	if strings.HasPrefix(origin, "https://s1mong.github.io") {
+		(*w).Header().Set("Access-Control-Allow-Origin", origin)
+	}
+}
+
 func getCounter(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w, r)
 	projectID := "sigma-tractor-429314-n0"
 
 	// Initialize Firestore client
@@ -50,6 +60,7 @@ func getCounter(w http.ResponseWriter, r *http.Request) {
 
 // TODO: ugly repeated code, fix later
 func incrementCounter(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w, r)
 	projectID := "sigma-tractor-429314-n0"
 
 	// Initialize Firestore client
