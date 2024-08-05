@@ -9,19 +9,10 @@ import (
 	"time"
 )
 
-type Vertex struct {
-	Key   string
-	Edges map[*Vertex]int
-}
-
-type Graph struct {
-	Vertices map[string]*Vertex
-}
-
-func ParseGraph(rawdata string) (*Graph, float64) {
+func ParseGraph(rawdata string) (map[string]map[string]int, float64) {
 	startTime := time.Now()
 
-	graph := &Graph{Vertices: make(map[string]*Vertex)}
+	graph := make(map[string]map[string]int)
 
 	lines := strings.Split(rawdata, "\n")
 	for _, line := range lines {
@@ -29,14 +20,11 @@ func ParseGraph(rawdata string) (*Graph, float64) {
 		node, connectedNode, weightStr := parts[0], parts[1], parts[2]
 		weight, _ := strconv.Atoi(weightStr)
 
-		if _, exists := graph.Vertices[node]; !exists {
-			graph.Vertices[node] = &Vertex{Key: node, Edges: make(map[*Vertex]int)}
-		}
-		if _, exists := graph.Vertices[connectedNode]; !exists {
-			graph.Vertices[connectedNode] = &Vertex{Key: connectedNode, Edges: make(map[*Vertex]int)}
+		if _, exists := graph[node]; !exists {
+			graph[node] = make(map[string]int)
 		}
 
-		graph.Vertices[node].Edges[graph.Vertices[connectedNode]] = weight
+		graph[node][connectedNode] = weight
 	}
 
 	elapsedTime := time.Since(startTime)
@@ -44,37 +32,37 @@ func ParseGraph(rawdata string) (*Graph, float64) {
 	return graph, elapsedTime.Seconds()
 }
 
-func (g *Graph) Dijkstra(startKey string) (distances map[string]int, runTime float64, err error) {
+func Dijkstra(graph map[string]map[string]int, startKey string) (distances map[string]int, runTime float64, err error) {
 	startTime := time.Now()
 
-	_, ok := g.Vertices[startKey]
+	_, ok := graph[startKey]
 	if !ok {
 		return nil, 0, fmt.Errorf("start vertex %v not found", startKey)
 	}
 
 	distances = make(map[string]int)
-	for key := range g.Vertices {
+	for key := range graph {
 		distances[key] = math.MaxInt32
 	}
 	distances[startKey] = 0
 
-	var vertices []*Vertex
-	for _, vertex := range g.Vertices {
+	var vertices []string // visited vertices
+	for vertex := range graph {
 		vertices = append(vertices, vertex)
 	}
 
 	for len(vertices) != 0 {
 		sort.SliceStable(vertices, func(i, j int) bool {
-			return distances[vertices[i].Key] < distances[vertices[j].Key]
+			return distances[vertices[i]] < distances[vertices[j]]
 		})
 
 		vertex := vertices[0]
 		vertices = vertices[1:]
 
-		for adjacent, cost := range vertex.Edges {
-			alt := distances[vertex.Key] + cost
-			if alt < distances[adjacent.Key] {
-				distances[adjacent.Key] = alt
+		for adjacent, cost := range graph[vertex] {
+			alt := distances[vertex] + cost
+			if alt < distances[adjacent] {
+				distances[adjacent] = alt
 			}
 		}
 	}

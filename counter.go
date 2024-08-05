@@ -55,7 +55,7 @@ func dijkstrasHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	graph, parseTime := ParseGraph(rawdata)
-	_, runTime, err := graph.Dijkstra(startNode)
+	_, runTime, err := Dijkstra(graph, startNode)
 
 	// Send the time response as JSON
 	w.Header().Set("Content-Type", "application/json")
