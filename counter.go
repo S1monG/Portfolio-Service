@@ -11,8 +11,13 @@ import (
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
-type response struct {
+type CounterResponse struct {
 	Counter int64 `json:"counter"`
+}
+
+type TimeResponse struct {
+	ParseTime float64 `json:"parseTime"`
+	RunTime   float64 `json:"runTime"`
 }
 
 func init() {
@@ -22,6 +27,7 @@ func init() {
 	// The path is specified when deploying the function
 	functions.HTTP("GetCounter", getCounter)
 	functions.HTTP("IncrementCounter", incrementCounter)
+	functions.HTTP("Dijkstras", dijkstrasHandler)
 }
 
 func enableCors(w *http.ResponseWriter, r *http.Request) {
@@ -30,6 +36,31 @@ func enableCors(w *http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(origin, "https://s1mong.github.io") {
 		(*w).Header().Set("Access-Control-Allow-Origin", origin)
 	}
+}
+
+func dijkstrasHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w, r)
+
+	rawdata := ""
+	err := json.NewDecoder(r.Body).Decode(&rawdata)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	startNode := r.URL.Query().Get("startNode")
+	if startNode == "" {
+		http.Error(w, "startNode query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	graph, parseTime := ParseGraph(rawdata)
+	_, runTime, err := graph.Dijkstra(startNode)
+
+	// Send the time response as JSON
+	w.Header().Set("Content-Type", "application/json")
+	jsonResponse := &TimeResponse{ParseTime: parseTime, RunTime: runTime}
+	json.NewEncoder(w).Encode(jsonResponse)
 }
 
 func getCounter(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +85,7 @@ func getCounter(w http.ResponseWriter, r *http.Request) {
 
 	// Send the response as JSON
 	w.Header().Set("Content-Type", "application/json")
-	jsonResponse := &response{Counter: counter}
+	jsonResponse := &CounterResponse{Counter: counter}
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
@@ -81,7 +112,7 @@ func incrementCounter(w http.ResponseWriter, r *http.Request) {
 
 	// Send the response as JSON
 	w.Header().Set("Content-Type", "application/json")
-	jsonResponse := &response{Counter: updatedCounter}
+	jsonResponse := &CounterResponse{Counter: updatedCounter}
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
